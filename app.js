@@ -107,6 +107,7 @@ createApp({
             return `${diffDays} Hari (${meta.jth_tempo.split('-').reverse().join('-')})`;
         };
 
+        // PAGINATION: Membagi items menjadi halaman-halaman dengan max 8 item per halaman
         const pages = computed(() => {
             const itemsPerPage = 8;
             const res = [];
@@ -116,16 +117,32 @@ createApp({
             return res.length > 0 ? res : [[]];
         });
 
+        // Menghitung Grand Total secara eksplisit sebagai angka
+        const grandTotal = computed(() => {
+            return selectedItems.value.reduce((acc, item) => acc + (Number(item.jumlah) || 0), 0);
+        });
+
+        // Fungsi untuk mendapatkan nomor item global (untuk pagination)
+        const getGlobalItemNumber = (pageIdx, itemIdx) => {
+            return (pageIdx * 8) + itemIdx + 1;
+        };
+
         return {
-            meta, searchQuery, showDropdown, selectedItems,
-            filteredItems, updateAlamat, addItem, calculateRow, formatJthTempo, pages,
+            meta, 
+            searchQuery, 
+            showDropdown, 
+            selectedItems,
+            filteredItems, 
+            updateAlamat, 
+            addItem, 
+            calculateRow, 
+            formatJthTempo, 
+            pages,
+            grandTotal,
+            getGlobalItemNumber,
             onSearchInput: () => { showDropdown.value = true; },
             searchItem: () => { if (filteredItems.value.length > 0) addItem(filteredItems.value[0]); },
             removeItem: (idx) => { if (confirm('Hapus item?')) selectedItems.value.splice(idx, 1); },
-            // Menghitung Grand Total secara eksplisit sebagai angka
-            grandTotal: computed(() => {
-                return selectedItems.value.reduce((acc, item) => acc + (Number(item.jumlah) || 0), 0);
-            }),
             formatNumber: (n) => new Intl.NumberFormat('id-ID').format(n),
             formatCurrency: (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(n),
             formatDate: (s) => s ? s.split('-').reverse().join('-') : '',
@@ -139,7 +156,8 @@ createApp({
             downloadPDF: () => {
                 const element = document.getElementById('invoice-container');
                 html2pdf().set({ 
-                    margin: 0, filename: 'Invoice.pdf', 
+                    margin: 0, 
+                    filename: 'Invoice.pdf', 
                     jsPDF: { format: 'a5', orientation: 'landscape' } 
                 }).from(element).save();
             }
