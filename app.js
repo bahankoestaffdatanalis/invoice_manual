@@ -7,9 +7,16 @@ createApp({
         const allItems = ref([]);
         const selectedItems = ref([]);
         const meta = reactive({
-            no_nota: '', jth_tempo: '', memo: '', tanggal: new Date().toISOString().substr(0, 10),
-            penerima_nama: '', penerima_alamat1: '', penerima_alamat2: '', sales: '', 
-            cetak_oleh: '', cetak_jam: new Date().toTimeString().substr(0, 5)
+            no_nota: '', 
+            jth_tempo: '', 
+            memo: '', 
+            tanggal: new Date().toISOString().substr(0, 10),
+            penerima_nama: '', 
+            penerima_alamat1: '', 
+            penerima_alamat2: '', 
+            sales: '', 
+            cetak_oleh: '', 
+            cetak_jam: new Date().toTimeString().substr(0, 5)
         });
 
         // 1. Ambil Data dari API SheetDB
@@ -19,7 +26,6 @@ createApp({
                 if (!res.ok) throw new Error("Gagal ambil data API");
                 const data = await res.json();
                 
-                // Masukkan data ke allItems agar bisa dicari
                 allItems.value = data;
                 console.log('Produk berhasil dimuat:', allItems.value.length);
             } catch (e) {
@@ -27,7 +33,6 @@ createApp({
                 alert('Gagal memuat data produk dari SheetDB!');
             }
 
-            // Close dropdown saat klik di luar area cari
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.search-container')) {
                     showDropdown.value = false;
@@ -35,78 +40,53 @@ createApp({
             });
         });
 
+        // 2. Filter Pencarian
         const filteredItems = computed(() => {
             if (!searchQuery.value || searchQuery.value.trim() === '') return [];
-            
             const query = searchQuery.value.toLowerCase().trim();
-            const results = allItems.value.filter(item => {
-                const barcodeMatch = item.barcode.toLowerCase().includes(query);
-                const productMatch = item.produk.toLowerCase().includes(query);
-                return barcodeMatch || productMatch;
-            });
             
-            console.log('Search query:', query, 'Results:', results.length);
-            return results.slice(0, 10);
+            return allItems.value.filter(item => {
+                const b = item.barcode ? String(item.barcode).toLowerCase() : '';
+                const p = item.produk ? String(item.produk).toLowerCase() : '';
+                return b.includes(query) || p.includes(query);
+            }).slice(0, 10);
         });
 
-        const onSearchInput = () => {
-            showDropdown.value = true;
-        };
-
-        const calculateRow = (idx) => {
-            const item = selectedItems.value[idx];
-            item.disc_rp = (item.qty * item.harga) * (item.disc_p / 100);
-            item.jumlah = (item.qty * item.harga) - item.disc_rp;
-        };
-
+        // 3. Tambah Item dengan Konversi Angka (PENTING)
         const addItem = (item) => {
-            // Check if item already exists
             const exists = selectedItems.value.find(i => i.barcode === item.barcode);
             if (exists) {
                 alert('Produk sudah ada dalam daftar!');
                 return;
             }
             
+            // Memastikan harga adalah angka murni
+            const hargaFix = Number(item.harga.toString().replace(/[^0-9.-]+/g,"")) || 0;
+
             selectedItems.value.push({ 
                 ...item, 
                 qty: 1, 
                 disc_p: 0, 
                 disc_rp: 0, 
-                jumlah: item.harga 
+                harga: hargaFix,
+                jumlah: hargaFix 
             });
             searchQuery.value = '';
             showDropdown.value = false;
-            console.log('Item added:', item.produk);
         };
 
-        const removeItem = (idx) => {
-            if (confirm('Hapus item ini?')) {
-                selectedItems.value.splice(idx, 1);
-            }
+        // 4. Kalkulasi Baris
+        const calculateRow = (idx) => {
+            const item = selectedItems.value[idx];
+            const qty = Number(item.qty) || 0;
+            const harga = Number(item.harga) || 0;
+            const discP = Number(item.disc_p) || 0;
+
+            item.disc_rp = (qty * harga) * (discP / 100);
+            item.jumlah = (qty * harga) - item.disc_rp;
         };
 
-        const searchItem = () => {
-            if (filteredItems.value.length > 0) {
-                addItem(filteredItems.value[0]);
-            } else {
-                alert('Produk tidak ditemukan!');
-            }
-        };
-
-        const formatJthTempo = () => {
-            if (!meta.jth_tempo || !meta.tanggal) return '@';
-            
-            const tanggalInvoice = new Date(meta.tanggal);
-            const tanggalJthTempo = new Date(meta.jth_tempo);
-            
-            const diffTime = tanggalJthTempo - tanggalInvoice;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            const formattedDate = meta.jth_tempo.split('-').reverse().join('-');
-            
-            return `${diffDays} Hari (${formattedDate})`;
-        };
-
+        // 5. Update Alamat Otomatis
         const updateAlamat = () => {
             const alamatMap = {
                 'Bahankoe BJM': 'Jl. Aes Nasution, Banjarmasin',
@@ -117,39 +97,41 @@ createApp({
                 'Bahankoe MTP': 'Jl. A. Yani KM. 37,5, Martapura'
             };
             meta.penerima_alamat1 = alamatMap[meta.penerima_nama] || '';
-        }
+        };
 
-        // Membagi items menjadi beberapa halaman, maksimal 8 item per halaman
+        const formatJthTempo = () => {
+            if (!meta.jth_tempo || !meta.tanggal) return '@';
+            const tglInv = new Date(meta.tanggal);
+            const tglJth = new Date(meta.jth_tempo);
+            const diffDays = Math.ceil((tglJth - tglInv) / (1000 * 60 * 60 * 24));
+            return `${diffDays} Hari (${meta.jth_tempo.split('-').reverse().join('-')})`;
+        };
+
         const pages = computed(() => {
             const itemsPerPage = 8;
-            const result = [];
+            const res = [];
             for (let i = 0; i < selectedItems.value.length; i += itemsPerPage) {
-                result.push(selectedItems.value.slice(i, i + itemsPerPage));
+                res.push(selectedItems.value.slice(i, i + itemsPerPage));
             }
-            return result.length > 0 ? result : [[]];
+            return res.length > 0 ? res : [[]];
         });
 
         return {
-            meta, 
-            updateAlamat,
-            searchQuery, 
-            showDropdown,
-            selectedItems, 
-            onSearchInput,
-            searchItem, 
-            calculateRow, 
-            filteredItems, 
-            addItem,
-            removeItem,
-            formatJthTempo,
-            pages,
-            grandTotal: computed(() => selectedItems.value.reduce((s, i) => s + i.jumlah, 0)),
+            meta, searchQuery, showDropdown, selectedItems,
+            filteredItems, updateAlamat, addItem, calculateRow, formatJthTempo, pages,
+            onSearchInput: () => { showDropdown.value = true; },
+            searchItem: () => { if (filteredItems.value.length > 0) addItem(filteredItems.value[0]); },
+            removeItem: (idx) => { if (confirm('Hapus item?')) selectedItems.value.splice(idx, 1); },
+            // Menghitung Grand Total secara eksplisit sebagai angka
+            grandTotal: computed(() => {
+                return selectedItems.value.reduce((acc, item) => acc + (Number(item.jumlah) || 0), 0);
+            }),
             formatNumber: (n) => new Intl.NumberFormat('id-ID').format(n),
             formatCurrency: (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(n),
             formatDate: (s) => s ? s.split('-').reverse().join('-') : '',
             formatDateLong: (s) => {
                 if(!s) return '';
-                const m = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+                const m = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
                 const d = new Date(s);
                 return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
             },
@@ -157,8 +139,7 @@ createApp({
             downloadPDF: () => {
                 const element = document.getElementById('invoice-container');
                 html2pdf().set({ 
-                    margin: 0, 
-                    filename: 'Invoice.pdf', 
+                    margin: 0, filename: 'Invoice.pdf', 
                     jsPDF: { format: 'a5', orientation: 'landscape' } 
                 }).from(element).save();
             }
