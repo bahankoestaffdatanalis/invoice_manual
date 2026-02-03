@@ -1,0 +1,78 @@
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║           INVOICE APP - CV NIO UTAMAN                     ║
+║           Cara Menjalankan Aplikasi                       ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+
+❌ JANGAN buka file index.html langsung dari folder!
+   (Akan muncul error CORS)
+
+✅ CARA YANG BENAR:
+
+┌───────────────────────────────────────────────────────────┐
+│  UNTUK WINDOWS (PALING MUDAH)                             │
+└───────────────────────────────────────────────────────────┘
+
+1. Pastikan Python sudah terinstall
+   - Cek dengan buka CMD dan ketik: python --version
+   - Jika belum ada, download: https://www.python.org/
+
+2. DOUBLE-CLICK file: server.bat
+
+3. Browser akan terbuka otomatis
+
+4. Selesai! Aplikasi siap digunakan
+
+
+┌───────────────────────────────────────────────────────────┐
+│  ALTERNATIF: Pakai Command Prompt                         │
+└───────────────────────────────────────────────────────────┘
+
+1. Buka Command Prompt (CMD)
+
+2. Masuk ke folder aplikasi:
+   cd C:\Users\User\Desktop\PROYEK CODING\tes3
+
+3. Jalankan server:
+   python server.py
+
+4. Buka browser, ketik: http://localhost:8000
+
+
+┌───────────────────────────────────────────────────────────┐
+│  FITUR APLIKASI                                           │
+└───────────────────────────────────────────────────────────┘
+
+✓ Cari produk dengan mengetik di search box
+✓ Dropdown otomatis muncul saat mengetik
+✓ Klik produk untuk tambahkan ke invoice
+✓ Edit Qty dan Diskon langsung di tabel
+✓ Otomatis hitung total
+✓ Multi halaman (8 item per halaman)
+✓ Print / Download PDF
+
+
+┌───────────────────────────────────────────────────────────┐
+│  TROUBLESHOOTING                                          │
+└───────────────────────────────────────────────────────────┘
+
+Q: Muncul error "Python tidak ditemukan"
+A: Install Python dari https://www.python.org/
+   Saat install, centang "Add Python to PATH"
+
+Q: Produk tidak muncul saat search
+A: Pastikan menjalankan dengan server.bat
+   JANGAN buka index.html langsung!
+
+Q: Port 8000 sudah dipakai
+A: Edit server.py, ubah PORT = 8000 jadi PORT = 8080
+   Lalu akses: http://localhost:8080
+
+
+═══════════════════════════════════════════════════════════
+
+Jika masih ada masalah, baca file README.md untuk 
+panduan lengkap dan opsi alternatif lainnya.
+
+═══════════════════════════════════════════════════════════

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - CV NIO UTAMAN</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Panel Input (Tidak ikut tercetak) -->
+        <div class="selection-ui no-print">
+            <h2>Input Data Invoice</h2>
+            <div class="form-grid">
+                <div class="form-group"><label>No. Nota:</label><input v-model="meta.no_nota" type="text" placeholder="INV/2026/001"></div>
+                <div class="form-group"><label>Jth. Tempo:</label><input v-model="meta.jth_tempo" type="date"></div>
+                <div class="form-group"><label>Memo:</label><input v-model="meta.memo" type="text"></div>
+                <div class="form-group"><label>Tanggal:</label><input v-model="meta.tanggal" type="date"></div>
+                <div class="form-group"><label>Bahankoe:</label><select v-model="meta.penerima_nama" @change="updateAlamat">
+                    <option disabled value="">Pilih Cabang</option>
+                    <option value="Bahankoe BJM">Bahankoe BJM</option>
+                    <option value="Bahankoe BJB">Bahankoe BJB</option>
+                    <option value="Bahankoe PAL7">Bahankoe PAL7</option>
+                    <option value="Bahankoe KMB">Bahankoe KMB</option>
+                    <option value="Bahankoe GASU">Bahankoe GASU</option>
+                    <option value="Bahankoe MTP">Bahankoe MTP</option>
+                </select></div>
+                <div class="form-group"><label>Alamat:</label><input v-model="meta.penerima_alamat1" type="text"></div>
+                <div class="form-group"><label>Sales:</label><input v-model="meta.sales" type="text"></div>
+                <div class="form-group"><label>Cetak oleh:</label><input v-model="meta.cetak_oleh" type="text" placeholder="Nama operator"></div>
+                <div class="form-group"><label>Jam Cetak:</label><input v-model="meta.cetak_jam" type="time"></div>
+            </div>
+            <hr>
+            <h2>Cari Produk</h2>
+            <div class="search-container">
+                <div class="search-box">
+                    <input 
+                        v-model="searchQuery" 
+                        @input="onSearchInput"
+                        @focus="showDropdown = true"
+                        type="text" 
+                        placeholder="Ketik Barcode atau Nama Produk..."
+                        autocomplete="off">
+                    <button @click="searchItem">Tambah</button>
+                </div>
+                <div v-if="showDropdown && searchQuery && filteredItems.length > 0" class="search-results">
+                    <div 
+                        v-for="item in filteredItems" 
+                        :key="item.barcode" 
+                        @click="addItem(item)" 
+                        class="result-item">
+                        <strong>{{ item.barcode }}</strong> - {{ item.produk }} 
+                        <span class="price-tag">{{ formatCurrency(item.harga) }}</span>
+                    </div>
+                </div>
+                <div v-if="showDropdown && searchQuery && filteredItems.length === 0" class="search-results">
+                    <div class="result-item no-results">Produk tidak ditemukan</div>
+                </div>
+            </div>
+            
+            <h3>Item Terpilih ({{ selectedItems.length }} item)</h3>
+            <div class="selected-items-container">
+                <table class="selected-items-table" v-if="selectedItems.length > 0">
+                    <thead>
+                        <tr>
+                            <th style="width:40px">No</th>
+                            <th>Barcode</th>
+                            <th>Produk</th>
+                            <th style="width:80px">Qty</th>
+                            <th style="width:80px">Disc %</th>
+                            <th style="width:100px">Disc RP</th>
+                            <th style="width:120px">Harga @</th>
+                            <th style="width:120px">Jumlah</th>
+                            <th style="width:60px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in selectedItems" :key="idx">
+                            <td class="text-center">{{ idx + 1 }}</td>
+                            <td>{{ item.barcode }}</td>
+                            <td>{{ item.produk }}</td>
+                            <td><input type="number" v-model.number="item.qty" @input="calculateRow(idx)" min="1" class="qty-input"></td>
+                            <td><input type="number" v-model.number="item.disc_p" @input="calculateRow(idx)" min="0" max="100" class="disc-input"></td>
+                            <td class="text-right">{{ formatCurrency(item.disc_rp) }}</td>
+                            <td class="text-right">{{ formatCurrency(item.harga) }}</td>
+                            <td class="text-right">{{ formatCurrency(item.jumlah) }}</td>
+                            <td class="text-center"><button @click="removeItem(idx)" class="btn-remove">×</button></td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="7" class="text-right"><strong>GRAND TOTAL:</strong></td>
+                            <td class="text-right"><strong>{{ formatCurrency(grandTotal) }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div v-else class="empty-state">
+                    <p>Belum ada item dipilih. Cari dan tambahkan produk di atas.</p>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button @click="printInvoice" class="btn-print">Print / Preview</button>
+                <button @click="downloadPDF" class="btn-download">Download PDF</button>
+            </div>
+        </div>
+
+        <!-- Template Invoice A5 Landscape -->
+        <div id="invoice-container">
+            <div v-for="(pageItems, pageIdx) in pages" :key="pageIdx" class="invoice-page">
+                <div class="header">
+                    <div class="header-left">
+                        <h1 class="invoice-title">INVOICE</h1>
+                        <p class="company-name">CV NIO UTAMAN</p>
+                        <table class="meta-table">
+                            <tr><td class="label">NO. NOTA</td><td class="sep">:</td><td>{{ meta.no_nota || '@' }}</td></tr>
+                            <tr><td class="label">JTH. TEMPO</td><td class="sep">:</td><td>{{ formatJthTempo() || '@' }}</td></tr>
+                            <tr><td class="label">MEMO</td><td class="sep">:</td><td>{{ meta.memo || '@' }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="header-right">
+                        <p class="date-loc" style="font-size: 11px;">BANJARMASIN, {{ formatDateLong(meta.tanggal) || '{Tanggal}' }}</p>
+                        <div class="recipient-box">
+                            <table class="recipient-table">
+                                <tr><td style="font-size: 10px;">Kepada Yth :</td><td></td><td></td></tr>
+                                <tr><td colspan="2" style="font-weight: bold; font-size: 15px;">{{ meta.penerima_nama || '@' }}</td><td></td></tr>
+                                <tr><td colspan="2" style="font-size: 13px;">{{ meta.penerima_alamat1 || '@' }}</td><td></td></tr>
+                                <tr style="font-weight: bold;height: 30px;font-size: 10px;"><td>Sales : {{ meta.sales || '@' }}</td><td></td><td></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th style="width:30px">NO</th>
+                            <th>BARCODE</th>
+                            <th>NAMA PRODUK</th>
+                            <th class="text-center">QTY</th>
+                            <th class="text-center">SAT</th>
+                            <th class="text-right">HARGA @</th>
+                            <th class="text-right">DISC %</th>
+                            <th class="text-right">DISC RP</th>
+                            <th class="text-right">JUMLAH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, i) in pageItems" :key="i">
+                            <td class="text-center">{{ i + 1 }}</td>
+                            <td>{{ item.barcode }}</td>
+                            <td>{{ item.produk }}</td>
+                            <td class="text-center">{{ item.qty }}</td>
+                            <td class="text-center">{{ item.sat }}</td>
+                            <td class="text-right">{{ formatNumber(item.harga) }}</td>
+                            <td class="text-right">{{ item.disc_p }}</td>
+                            <td class="text-right">{{ formatNumber(item.disc_rp) }}</td>
+                            <td class="text-right">{{ formatNumber(item.jumlah) }}</td>
+                        </tr>
+                        <tr v-for="n in (8 - pageItems.length)" class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                    </tbody>
+                </table>
+                <div class="table-bottom-border"></div>
+
+                <div class="footer">
+                    <div class="footer-main">
+                        <div class="sig-container">
+                            <div class="sig-box"><p>Diketahui,</p><div class="sig-line"></div></div>
+                            <div class="sig-box"><p>Penerima,</p><div class="sig-line"></div></div>
+                            <div class="sig-box"><p>Diperiksa,</p><div class="sig-line"></div></div>
+                        </div>
+                        <div class="grand-total-box">
+                            GRAND TOTAL : <span class="total-underline">{{ formatNumber(grandTotal) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-info">
+                    <div class="bank-info" style="font-weight: bold; margin-top: 15px; font-size: 10px;">Pembayaran harap transfer ke rekening BCA an. CV Nio Utaman no rekening 0512 300 462</div>
+                    <div class="print-meta" style="margin-top: 7px;"><p>Cetak - {{ meta.cetak_oleh || '@' }} - {{ formatDate(meta.tanggal) || '{Tanggal}' }} {{ meta.cetak_jam || '{Jam}' }}</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

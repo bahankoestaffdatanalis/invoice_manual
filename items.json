@@ -1,0 +1,16 @@
+[
+  { "barcode": "1", "produk": "SABUN MANDI LUX 50G", "sat": "PCS", "harga": 5000 },
+  { "barcode": "2", "produk": "Dummy 01", "sat": "PCS", "harga": 7500 },
+  { "barcode": "3", "produk": "Dummy 02", "sat": "PCS", "harga": 8000 },
+  { "barcode": "4", "produk": "Dummy 03", "sat": "PCS", "harga": 9000 },
+  { "barcode": "5", "produk": "Dummy 04", "sat": "PCS", "harga": 6000 },
+  { "barcode": "6", "produk": "Dummy 05", "sat": "PCS", "harga": 11000 },
+  { "barcode": "7", "produk": "Dummy 06", "sat": "PCS", "harga": 12000 },
+  { "barcode": "8991002", "produk": "PEPSODENT ACTION 123 190G", "sat": "PCS", "harga": 12000 },
+  { "barcode": "8991003", "produk": "RINSO ANTI NODA 800G", "sat": "PCS", "harga": 25000 },
+  { "barcode": "8991004", "produk": "MAMA LEMON JERUK NIPIS 800ML", "sat": "PCS", "harga": 15000 },
+  { "barcode": "8991005", "produk": "SARIWANGI TEH CELUP 25S", "sat": "BOX", "harga": 6000 },
+  { "barcode": "8991006", "produk": "INDOMIE GORENG SPESIAL", "sat": "PCS", "harga": 3000 },
+  { "barcode": "8991007", "produk": "BIMOLI MINYAK GORENG 2L", "sat": "POUCH", "harga": 35000 },
+  { "barcode": "8991008", "produk": "GULA PASIR LOKAL 1KG", "sat": "KG", "harga": 14000 }
+]
