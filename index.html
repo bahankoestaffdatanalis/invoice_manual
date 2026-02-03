@@ -107,7 +107,7 @@
             </div>
         </div>
 
-        <!-- Template Invoice A5 Landscape -->
+        <!-- Template Invoice A5 Landscape - DENGAN PAGINATION -->
         <div id="invoice-container">
             <div v-for="(pageItems, pageIdx) in pages" :key="pageIdx" class="invoice-page">
                 <div class="header">
@@ -149,7 +149,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="(item, i) in pageItems" :key="i">
-                            <td class="text-center">{{ i + 1 }}</td>
+                            <td class="text-center">{{ getGlobalItemNumber(pageIdx, i) }}</td>
                             <td>{{ item.barcode }}</td>
                             <td>{{ item.produk }}</td>
                             <td class="text-center">{{ item.qty }}</td>
@@ -159,12 +159,13 @@
                             <td class="text-right">{{ formatNumber(item.disc_rp) }}</td>
                             <td class="text-right">{{ formatNumber(item.jumlah) }}</td>
                         </tr>
-                        <tr v-for="n in (8 - pageItems.length)" class="empty-row"><td colspan="9">&nbsp;</td></tr>
+                        <tr v-for="n in (8 - pageItems.length)" :key="'empty-' + n" class="empty-row"><td colspan="9">&nbsp;</td></tr>
                     </tbody>
                 </table>
                 <div class="table-bottom-border"></div>
 
-                <div class="footer">
+                <!-- Footer hanya muncul di halaman terakhir -->
+                <div v-if="pageIdx === pages.length - 1" class="footer">
                     <div class="footer-main">
                         <div class="sig-container">
                             <div class="sig-box"><p>Diketahui,</p><div class="sig-line"></div></div>
@@ -175,12 +176,10 @@
                             GRAND TOTAL : <span class="total-underline">{{ formatNumber(grandTotal) }}</span>
                         </div>
                     </div>
+                    <div class="bank-info" style="font-size: 11px; font-weight: bold;">Pembayaran harap transfer ke rekening BCA an. CV Nio Utaman no rekening 0512 300 462</div>
                 </div>
-
-                <div class="bottom-info">
-                    <div class="bank-info" style="font-weight: bold; margin-top: 15px; font-size: 10px;">Pembayaran harap transfer ke rekening BCA an. CV Nio Utaman no rekening 0512 300 462</div>
-                    <div class="print-meta" style="margin-top: 7px;"><p>Cetak - {{ meta.cetak_oleh || '@' }} - {{ formatDate(meta.tanggal) || '{Tanggal}' }} {{ meta.cetak_jam || '{Jam}' }}</p></div>
-                </div>
+                <div class="page-number" style="top: 460px;">Cetak - {{ meta.cetak_oleh || '@' }} - {{ formatDate(meta.tanggal) || '{Tanggal}' }} {{ meta.cetak_jam || '{Jam}' }}</div>
+                <div class="page-number" style="top: 440px;">Hal {{ pageIdx + 1 }}/{{ pages.length }}</div>
             </div>
         </div>
     </div>
