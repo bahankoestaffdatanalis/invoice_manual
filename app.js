@@ -6,6 +6,7 @@ createApp({
         const showDropdown = ref(false);
         const allItems = ref([]);
         const selectedItems = ref([]);
+        const importStatus = ref(null);
         const meta = reactive({
             no_nota: '', 
             jth_tempo: '', 
@@ -53,23 +54,26 @@ createApp({
         });
 
         // 3. Tambah Item dengan Konversi Angka (PENTING)
-        const addItem = (item) => {
+        const addItem = (item, customQty = 1) => {
             const exists = selectedItems.value.find(i => i.barcode === item.barcode);
             if (exists) {
-                alert('Produk sudah ada dalam daftar!');
+                // Jika sudah ada, update qty-nya
+                exists.qty = Number(exists.qty) + Number(customQty);
+                calculateRow(selectedItems.value.indexOf(exists));
                 return;
             }
             
             // Memastikan harga adalah angka murni
             const hargaFix = Number(item.harga.toString().replace(/[^0-9.-]+/g,"")) || 0;
+            const qtyFix = Number(customQty) || 1;
 
             selectedItems.value.push({ 
                 ...item, 
-                qty: 1, 
+                qty: qtyFix, 
                 disc_p: 0, 
                 disc_rp: 0, 
                 harga: hargaFix,
-                jumlah: hargaFix 
+                jumlah: hargaFix * qtyFix
             });
             searchQuery.value = '';
             showDropdown.value = false;
@@ -97,6 +101,113 @@ createApp({
                 'Bahankoe MTP': 'Jl. A. Yani KM. 37,5, Martapura'
             };
             meta.penerima_alamat1 = alamatMap[meta.penerima_nama] || '';
+        };
+
+        // 6. IMPORT CSV FUNCTION - SUPPORT DELIMITER ; DAN ,
+        const handleFileUpload = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            importStatus.value = { type: 'info', message: 'Memproses file...' };
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let text = e.target.result;
+                    
+                    // Remove BOM jika ada
+                    if (text.charCodeAt(0) === 0xFEFF) {
+                        text = text.substr(1);
+                    }
+                    
+                    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+                    
+                    let successCount = 0;
+                    let failCount = 0;
+                    const failedBarcodes = [];
+
+                    // Skip header jika ada
+                    const startIndex = lines[0].toLowerCase().includes('barcode') ? 1 : 0;
+
+                    // Deteksi delimiter (prioritas: semicolon > comma)
+                    const delimiter = lines[startIndex] && lines[startIndex].includes(';') ? ';' : ',';
+
+                    console.log('Delimiter detected:', delimiter);
+                    console.log('Total lines:', lines.length);
+                    console.log('Starting from line:', startIndex);
+
+                    for (let i = startIndex; i < lines.length; i++) {
+                        const line = lines[i];
+                        const parts = line.split(delimiter).map(p => p.trim());
+                        
+                        if (parts.length < 2) {
+                            console.log('Skipping line (not enough parts):', line);
+                            continue;
+                        }
+
+                        const barcode = parts[0].replace(/^["']|["']$/g, ''); // Remove quotes
+                        const qty = Number(parts[1]) || 1;
+
+                        console.log(`Processing: barcode="${barcode}", qty=${qty}`);
+
+                        // Cari produk berdasarkan barcode di API
+                        const product = allItems.value.find(item => {
+                            const itemBarcode = String(item.barcode).trim();
+                            const searchBarcode = String(barcode).trim();
+                            return itemBarcode === searchBarcode;
+                        });
+
+                        if (product) {
+                            console.log('Product found:', product.produk);
+                            addItem(product, qty);
+                            successCount++;
+                        } else {
+                            console.log('Product NOT found for barcode:', barcode);
+                            failCount++;
+                            failedBarcodes.push(barcode);
+                        }
+                    }
+
+                    console.log('Success:', successCount, 'Failed:', failCount);
+
+                    // Status message
+                    if (successCount > 0 && failCount === 0) {
+                        importStatus.value = { 
+                            type: 'success', 
+                            message: `✓ Berhasil import ${successCount} item` 
+                        };
+                    } else if (successCount > 0 && failCount > 0) {
+                        importStatus.value = { 
+                            type: 'warning', 
+                            message: `⚠ Import ${successCount} berhasil, ${failCount} gagal (barcode tidak ditemukan: ${failedBarcodes.slice(0, 5).join(', ')}${failedBarcodes.length > 5 ? '...' : ''})` 
+                        };
+                    } else {
+                        importStatus.value = { 
+                            type: 'error', 
+                            message: `✗ Semua barcode tidak ditemukan di database. Contoh barcode yang gagal: ${failedBarcodes.slice(0, 3).join(', ')}` 
+                        };
+                    }
+
+                    // Clear status setelah 8 detik
+                    setTimeout(() => {
+                        importStatus.value = null;
+                    }, 8000);
+
+                } catch (error) {
+                    console.error('Import error:', error);
+                    importStatus.value = { 
+                        type: 'error', 
+                        message: `✗ Error: ${error.message}` 
+                    };
+                }
+            };
+
+            reader.readAsText(file);
+        };
+
+        const clearFile = () => {
+            document.getElementById('csvFile').value = '';
+            importStatus.value = null;
         };
 
         const formatJthTempo = () => {
@@ -132,7 +243,8 @@ createApp({
             searchQuery, 
             showDropdown, 
             selectedItems,
-            filteredItems, 
+            filteredItems,
+            importStatus,
             updateAlamat, 
             addItem, 
             calculateRow, 
@@ -140,6 +252,8 @@ createApp({
             pages,
             grandTotal,
             getGlobalItemNumber,
+            handleFileUpload,
+            clearFile,
             onSearchInput: () => { showDropdown.value = true; },
             searchItem: () => { if (filteredItems.value.length > 0) addItem(filteredItems.value[0]); },
             removeItem: (idx) => { if (confirm('Hapus item?')) selectedItems.value.splice(idx, 1); },
