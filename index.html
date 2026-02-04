@@ -33,6 +33,21 @@
                 <div class="form-group"><label>Jam Cetak:</label><input v-model="meta.cetak_jam" type="time"></div>
             </div>
             <hr>
+            
+            <!-- Import CSV -->
+            <div class="import-section">
+                <h2>Import CSV</h2>
+                <p style="font-size: 12px; color: #666; margin: 5px 0;">Format CSV: <strong>barcode;qty</strong> atau <strong>barcode,qty</strong> (contoh: 8992993524811;5)</p>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="file" @change="handleFileUpload" accept=".csv" id="csvFile" style="flex: 1;">
+                    <button @click="clearFile" class="btn-clear">Clear</button>
+                </div>
+                <div v-if="importStatus" :class="['import-status', importStatus.type]">
+                    {{ importStatus.message }}
+                </div>
+            </div>
+            <hr>
+            
             <h2>Cari Produk</h2>
             <div class="search-container">
                 <div class="search-box">
@@ -98,7 +113,7 @@
                     </tfoot>
                 </table>
                 <div v-else class="empty-state">
-                    <p>Belum ada item dipilih. Cari dan tambahkan produk di atas.</p>
+                    <p>Belum ada item dipilih. Cari dan tambahkan produk di atas atau import CSV.</p>
                 </div>
             </div>
             <div class="action-buttons">
