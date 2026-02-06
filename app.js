@@ -9,13 +9,13 @@ createApp({
         const importStatus = ref(null);
         const meta = reactive({
             no_nota: '', 
-            jth_tempo: '', 
+            jth_tempo: new Date().toISOString().substr(0, 10), 
             memo: '', 
             tanggal: new Date().toISOString().substr(0, 10),
             penerima_nama: '', 
             penerima_alamat1: '', 
             penerima_alamat2: '', 
-            sales: '', 
+            sales: '[NONE]', 
             cetak_oleh: '', 
             cetak_jam: new Date().toTimeString().substr(0, 5)
         });
