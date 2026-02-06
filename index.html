@@ -14,7 +14,7 @@
         <div class="selection-ui no-print">
             <h2>Input Data Invoice</h2>
             <div class="form-grid">
-                <div class="form-group"><label>No. Nota:</label><input v-model="meta.no_nota" type="text" placeholder="INV/2026/001"></div>
+                <div class="form-group"><label>No. Nota:</label><input v-model="meta.no_nota" type="text" placeholder="Nomor Nota"></div>
                 <div class="form-group"><label>Jth. Tempo:</label><input v-model="meta.jth_tempo" type="date"></div>
                 <div class="form-group"><label>Memo:</label><input v-model="meta.memo" type="text"></div>
                 <div class="form-group"><label>Tanggal:</label><input v-model="meta.tanggal" type="date"></div>
@@ -29,7 +29,15 @@
                 </select></div>
                 <div class="form-group"><label>Alamat:</label><input v-model="meta.penerima_alamat1" type="text"></div>
                 <div class="form-group"><label>Sales:</label><input v-model="meta.sales" type="text"></div>
-                <div class="form-group"><label>Cetak oleh:</label><input v-model="meta.cetak_oleh" type="text" placeholder="Nama operator"></div>
+                <div class="form-group"><label>Cetak oleh:</label>
+                    <select v-model="meta.cetak_oleh">
+                        <option disabled value="">Pilih User</option>
+                        <option value="RAHMAN">RAHMAN</option>
+                        <option value="RINA">RINA</option>
+                        <option value="MILA">MILA</option>
+                        <option value="WINA">WINA</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>Jam Cetak:</label><input v-model="meta.cetak_jam" type="time"></div>
             </div>
             <hr>
