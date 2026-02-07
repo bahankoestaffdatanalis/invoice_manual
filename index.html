@@ -45,7 +45,8 @@
             <!-- Import CSV -->
             <div class="import-section">
                 <h2>Import CSV</h2>
-                <p style="font-size: 12px; color: #666; margin: 5px 0;">Format CSV: <strong>barcode;qty</strong> atau <strong>barcode,qty</strong> (contoh: 8992993524811;5)</p>
+                <p style="font-size: 12px; color: #666; margin: 5px 0;">Format CSV: <strong>barcode;qty;disc%</strong> (contoh: 8992993524811;5.5;10.25)</p>
+                <p style="font-size: 11px; color: #999; margin: 0;">Kolom disc% opsional. Qty dan disc% bisa desimal (gunakan koma atau titik). Delimiter bisa ; atau ,</p>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="file" @change="handleFileUpload" accept=".csv" id="csvFile" style="flex: 1;">
                     <button @click="clearFile" class="btn-clear">Clear</button>

@@ -103,7 +103,7 @@ createApp({
             meta.penerima_alamat1 = alamatMap[meta.penerima_nama] || '';
         };
 
-        // 6. IMPORT CSV FUNCTION - SUPPORT DELIMITER ; DAN ,
+        // 6. IMPORT CSV FUNCTION - SUPPORT DELIMITER ; DAN , - DENGAN DISC %
         const handleFileUpload = (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -145,10 +145,27 @@ createApp({
                             continue;
                         }
 
-                        const barcode = parts[0].replace(/^["']|["']$/g, ''); // Remove quotes
-                        const qty = Number(parts[1]) || 1;
+                        // Barcode: baca sebagai TEXT, hapus quotes, jaga leading zeros
+                        let barcode = parts[0].replace(/^["']|["']$/g, '').trim();
+                        
+                        // Qty: konversi apapun formatnya ke number (support koma dan titik sebagai desimal)
+                        let qtyRaw = parts[1].replace(/^["']|["']$/g, '').trim();
+                        // Ganti koma dengan titik untuk parsing float
+                        qtyRaw = qtyRaw.replace(',', '.');
+                        const qty = parseFloat(qtyRaw) || 1;
+                        
+                        // Disc %: opsional (kolom ke-3) - support float juga
+                        let discP = 0;
+                        if (parts.length >= 3) {
+                            let discRaw = parts[2].replace(/^["']|["']$/g, '').trim();
+                            // Ganti koma dengan titik untuk parsing float
+                            discRaw = discRaw.replace(',', '.');
+                            discP = parseFloat(discRaw) || 0;
+                            // Batasi disc antara 0-100
+                            discP = Math.max(0, Math.min(100, discP));
+                        }
 
-                        console.log(`Processing: barcode="${barcode}", qty=${qty}`);
+                        console.log(`Processing: barcode="${barcode}", qty=${qty}, disc=${discP}%`);
 
                         // Cari produk berdasarkan barcode di API
                         const product = allItems.value.find(item => {
@@ -159,7 +176,34 @@ createApp({
 
                         if (product) {
                             console.log('Product found:', product.produk);
-                            addItem(product, qty);
+                            
+                            // Cek apakah item sudah ada di selectedItems
+                            const existingItem = selectedItems.value.find(i => i.barcode === product.barcode);
+                            
+                            if (existingItem) {
+                                // Update qty dan disc jika sudah ada
+                                existingItem.qty = Number(existingItem.qty) + Number(qty);
+                                existingItem.disc_p = discP; // Update disc dengan nilai terakhir
+                                calculateRow(selectedItems.value.indexOf(existingItem));
+                            } else {
+                                // Tambah item baru dengan disc
+                                const hargaFix = Number(product.harga.toString().replace(/[^0-9.-]+/g,"")) || 0;
+                                const qtyFix = Number(qty) || 1;
+                                const discPFix = Number(discP) || 0;
+                                
+                                const discRp = (qtyFix * hargaFix) * (discPFix / 100);
+                                const jumlah = (qtyFix * hargaFix) - discRp;
+
+                                selectedItems.value.push({ 
+                                    ...product, 
+                                    qty: qtyFix, 
+                                    disc_p: discPFix, 
+                                    disc_rp: discRp, 
+                                    harga: hargaFix,
+                                    jumlah: jumlah
+                                });
+                            }
+                            
                             successCount++;
                         } else {
                             console.log('Product NOT found for barcode:', barcode);
