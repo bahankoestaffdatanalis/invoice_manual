@@ -69,6 +69,7 @@
                         autocomplete="off">
                     <button @click="searchItem">Tambah</button>
                 </div>
+                <button @click="clearAllItems" class="btn-clear-all" style="margin-top: 20px;">Hapus Semua Item</button>
                 <div v-if="showDropdown && searchQuery && filteredItems.length > 0" class="search-results">
                     <div 
                         v-for="item in filteredItems" 
