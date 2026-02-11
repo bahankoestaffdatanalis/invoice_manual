@@ -254,6 +254,18 @@ createApp({
             importStatus.value = null;
         };
 
+        const clearAllItems = () => {
+            if (selectedItems.value.length === 0) {
+                alert('Tidak ada item yang perlu dihapus.');
+                return;
+            }
+            
+            const confirmed = confirm(`Apakah Anda yakin ingin menghapus semua ${selectedItems.value.length} item?`);
+            if (confirmed) {
+                selectedItems.value = [];
+            }
+        };
+
         const formatJthTempo = () => {
             if (!meta.jth_tempo || !meta.tanggal) return '@';
             const tglInv = new Date(meta.tanggal);
@@ -298,6 +310,7 @@ createApp({
             getGlobalItemNumber,
             handleFileUpload,
             clearFile,
+            clearAllItems,
             onSearchInput: () => { showDropdown.value = true; },
             searchItem: () => { if (filteredItems.value.length > 0) addItem(filteredItems.value[0]); },
             removeItem: (idx) => { if (confirm('Hapus item?')) selectedItems.value.splice(idx, 1); },
