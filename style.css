@@ -1,4 +1,4 @@
-@page { size: A5 landscape; margin: 0; }
+@page { size: A4; margin: 0; }
 body { font-family: 'Verdana', sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; color: black; }
 
 .selection-ui { max-width: 950px; margin: 20px auto; background: white; padding: 25px; border-radius: 8px; }
@@ -59,17 +59,23 @@ body { font-family: 'Verdana', sans-serif; margin: 0; padding: 0; background-col
     width: 210mm; 
     height: 148mm; 
     padding: 5mm 10mm; 
-    margin: 10px auto; 
+    margin: 0 auto; 
     background: white; 
     box-sizing: border-box; 
     display: flex; 
     flex-direction: column;
-    page-break-after: always;
     position: relative;
+}
+
+ 
+.invoice-page:nth-child(even) {
+    page-break-after: always;
+    border-bottom: 1px dashed
 }
 
 .invoice-page:last-child {
     page-break-after: auto;
+    border-bottom: none
 }
 
 .header { display: flex; justify-content: space-between; margin-bottom: 10px; }
@@ -143,7 +149,6 @@ body { font-family: 'Verdana', sans-serif; margin: 0; padding: 0; background-col
         display: flex; 
         flex-direction: column;
         position: relative;
-        page-break-after: always;
     }
     .invoice-page:last-child {
         page-break-after: auto;
